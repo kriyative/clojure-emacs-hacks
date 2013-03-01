@@ -21,7 +21,11 @@
 (defun clojuredocs ()
   (interactive)
   (cljx/web-search "http://clojuredocs.org/search?q=%s"
-                   (or (region) (read-string "ClojureDocs: "))))
+                   (or (let ((sym (symbol-at-point)))
+                         (when sym
+                           (symbol-name sym)))
+                       (region)
+                       (read-string "ClojureDocs: "))))
   
 (setq browse-url-browser-function 'w3m-browse-url-other-window)
 
