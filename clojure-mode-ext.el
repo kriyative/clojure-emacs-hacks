@@ -62,17 +62,12 @@ Keybinding to force a clear and recompile: C-u C-c C-k"
             (slime-compile-and-load-file)))
       (slime-compile-and-load-file))))
 
-(defvar *lisp-symbol-to-java-charmap* '(("-" . "_") ("/" . ".")))
-(progn
-  (defvar *lisp-symbol-to-java-charmap-re*  nil)
-  (setq *lisp-symbol-to-java-charmap-re*
-        (concat "[" (mapconcat 'car *lisp-symbol-to-java-charmap* "") "]")))
+(defun cljx/subst-chars-in-string (str charmap)
+  (let ((re (concat "[" (mapconcat 'car charmap "") "]")))
+    (replace-regexp-in-string re (lambda (m) (cdr (assoc m charmap))) str)))
 
 (defun cljx/lisp-symbol-to-java (symbol)
-  (replace-regexp-in-string
-   *lisp-symbol-to-java-charmap-re*
-   (lambda (m) (cdr (assoc m *lisp-symbol-to-java-charmap*)))
-   symbol))
+  (cljx/subst-chars-in-string symbol '(("-" . "_") ("/" . "."))))
 
 (defun cljx/slime-edit-definition (name &optional where)
   "Replacement for default slime-edit-definition, which falls
