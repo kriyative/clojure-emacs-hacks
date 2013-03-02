@@ -1,32 +1,71 @@
-(require 'w3m)
+;;; Search and view Clojure documentation from clojuredocs.org
+;;;
 
-(defun w3m-browse-url-other-window (url &optional new-session)
-  (save-excursion
-    (when (one-window-p)
-      (split-window-horizontally))
-    (other-window 1)
-    (let ((w3m-use-tab nil))
-      (w3m-browse-url url new-session))))
+(require 'clojure-mode-ext)
+(require 'clojure-slime-ext)
 
-(defun w3m-mode-hook ()
-  (define-key w3m-mode-map "\M-t" 'w3m-copy-buffer))
+(defconst clojuredocs-uri-prefix "http://clojuredocs.org")
+(defconst google-uri-prefix "http://google.com")
 
-(require 'w3m)
-(add-hook 'w3m-mode-hook 'w3m-mode-hook)
+(defun clojuredocs-find-uri (sym &optional prefix-map uri-formatter)
+  (let ((match (find-if (lambda (pair)
+			  (string-match (first pair) sym))
+			(or prefix-map clojuredocs-prefix-map))))
+    (when match
+      (funcall (or uri-formatter 'clojuredocs-uri-formatter) sym (cdr match)))))
 
-(defun cljx/web-search (search-url terms)
-  (browse-url
-   (format search-url (replace-regexp-in-string "[ ]+" "+" terms))))
+(defvar clojuredocs-prefix-map
+  '(("^ring" . "/ring/%s")
+    ("^clojure\.core" . "/clojure_core/%s")))
+
+(defun clojuredocs-uri-formatter (sym format-string)
+  (concat clojuredocs-uri-prefix (format format-string sym) "#top"))
+
+(defvar javadocs-prefix-map
+  '(("^\\(java[x]?.\\|org.ietf.\\|org.omg.\\|org.w3c.\\|org.xml.\\)"
+     . "http://docs.oracle.com/javase/6/docs/api/%s.html")
+    ("^org\.eclipse.jetty"
+     . "http://download.eclipse.org/jetty/stable-7/apidocs/%s.html")
+    ("^org\.apache\.log4j"
+     . "http://logging.apache.org/log4j/1.2/apidocs/%s.html")
+    ("^org\.apache\.commons\.codec"
+     . "http://commons.apache.org/codec/apidocs/%s.html")))
+
+(defun javadocs-uri-formatter (sym format-string)
+  (format format-string (replace-regexp-in-string "\\." "/" sym)))
+
+(defun clojuredocs-render (sap type)
+  (destructuring-bind (sap type)
+      values
+    (cond
+     ((eq :var type)
+      (browse-url
+       (or (clojuredocs-find-uri sap)
+           (format "%s/search?q=%s"
+                   clojuredocs-uri-prefix
+                   (first (last (split-string sap "/")))
+                   (replace-regexp-in-string "[ ]+" "+" sap)))))
+     ((eq :class type)
+      (browse-url
+       (or (clojuredocs-find-uri sap javadocs-prefix-map 'javadocs-uri-formatter)
+           (format "%s/search?%s&q=%s+javadoc"
+                   google-uri-prefix
+                   "btnI=I%27m+Feeling+Lucky&ie=UTF-8&oe=UTF-8"
+                   sap)))))))
 
 (defun clojuredocs ()
+  "Get the symbol at point; or prompt for a symbol name, look it
+up in the clojuredocs.org, or find a javadoc (if a Java class)
+and render the results using the default web browser."
   (interactive)
-  (cljx/web-search "http://clojuredocs.org/search?q=%s"
-                   (or (let ((sym (symbol-at-point)))
-                         (when sym
-                           (symbol-name sym)))
-                       (region)
-                       (read-string "ClojureDocs: "))))
-  
-(setq browse-url-browser-function 'w3m-browse-url-other-window)
+  (if (not (slime-connected-p))
+      (message "No clojure to talk to.")
+    (destructuring-bind (status &rest values)
+	(cljx/slime-resolve-symbol (or (cljx/symbol-at-point)
+				       (region)
+				       (read-string "ClojureDocs: ")))
+      (if (eq :error status)
+	  (apply 'message values)
+	(apply 'clojuredocs-render values)))))
 
 (provide 'clojuredocs)
