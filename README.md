@@ -29,8 +29,10 @@ the comfort of Emacs - courtesy of [w3m](http://w3m.sourceforge.net/)
 and [emacs-w3m](http://www.emacswiki.org/emacs/emacs-w3m).
 
 Provides the `M-x clojuredocs` command, which will get the symbol at
-point; or prompt for a symbol name, look it up in the clojuredocs.org
-and render the results using `w3m`.
+point; or prompt for a symbol name, look it up in clojuredocs.org, or
+find the javadoc for Java classes, and render the results using the
+default browser. Use `browse-w3m.el` to setup w3m as the default
+browser.
 
 ## Installation
 
