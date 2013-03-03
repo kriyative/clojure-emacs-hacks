@@ -5,15 +5,18 @@
      (ns swank.commands.cljx)
      (swank.commands/defslimefn cljx-resolve-symbol [ns-str sym-str]
        (if-let [the-ns (find-ns (symbol ns-str))]
-         (if-let [resolved (ns-resolve the-ns (symbol sym-str))]
-	   (cond
-	     (var? resolved) (let [^clojure.lang.Var the-var resolved]
-			       (list :ok
+         (try
+          (if-let [resolved (ns-resolve the-ns (symbol sym-str))]
+            (cond
+             (var? resolved) (let [^clojure.lang.Var the-var resolved]
+                               (list :ok
                                      (str (.ns the-var) "/" (.sym the-var))
                                      :var))
-	     (class? resolved) (let [^java.lang.Class the-class resolved]
-				 (list :ok (.getName the-class) :class)))
-	   (list :error (format "Can't resolve symbol %s." sym-str)))
+             (class? resolved) (let [^java.lang.Class the-class resolved]
+                                 (list :ok (.getName the-class) :class)))
+            (list :error (format "Can't resolve symbol %s." sym-str)))
+          (catch Exception ex
+            (list :error (format "Can't resolve symbol %s." sym-str))))
 	 (list :error
                (format "Can't find namespace %s. Consider compiling buffer."
                        ns-str)))))
