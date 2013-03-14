@@ -26,10 +26,11 @@
   (replace-regexp-in-string "\\\\\\(.\\)" "\\1" (prin1-to-string expr)))
 
 (defun cljx/inject-slime-commands ()
-  (slime-eval-async `(interactive-eval
-                      ,(cljx/form->string *cljx-slime-commands*))
-    (lambda (&rest args) (message "cljx-slime-commands injected ok."))))
-     
+  (when (equal "Clojure" (slime-lisp-implementation-type))
+    (slime-eval-async `(interactive-eval
+			,(cljx/form->string *cljx-slime-commands*))
+      (lambda (&rest args) (message "cljx-slime-commands injected ok.")))))
+
 (add-hook 'slime-connected-hook 'cljx/inject-slime-commands)
 
 (defun symbol-at-point-as-string ()
