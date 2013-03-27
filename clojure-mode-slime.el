@@ -13,8 +13,8 @@
 ;; Pipe to $SHELL to work around mackosecks GUI Emacs $PATH issues.
 (defcustom clojure-swank-command
   (if (or (locate-file "lein" exec-path) (locate-file "lein.bat" exec-path))
-      "lein jack-in %s"
-    "echo \"lein jack-in %s\" | $SHELL -l")
+      "lein swank %s"
+    "echo \"lein swank %s\" | $SHELL -l")
   "The command used to start swank via clojure-jack-in.
 For remote swank it is lein must be in your PATH and the remote
 proc is launched via sh rather than bash, so it might be necessary
@@ -120,8 +120,8 @@ The arguments are dir, hostname, and port.  The return value should be an `alist
                             (lambda (process output)
                               (with-current-buffer (process-buffer process)
                                 (insert output))
-                              (when (string-match "proceed to jack in" output)
-                                (clojure-eval-bootstrap-region process)
+                              (when (string-match "Connection opened on localhost port"
+                                                  output)
                                 (with-current-buffer
                                     ;; this block is an attempt to avoid
                                     ;; creating duplicate repl windows
@@ -148,13 +148,6 @@ The arguments are dir, hostname, and port.  The return value should be an `alist
                        tramp-current-host "localhost"))
          (connection-name (clojure-generate-swank-connection-name dir hostname))
          (swank-buffer-name (format "*%s*" connection-name)))
-
-    (when (and (functionp 'slime-disconnect)
-               (slime-current-connection)
-               ;; TODO: ask for permission once jack-in supports multiple connections
-               ;; (and (interactive-p) (y-or-n-p "Close old connections first? "))
-               )
-      (slime-disconnect))
     (clojure-kill-swank-buffer swank-buffer-name)
     (clojure-jack-in-start-process connection-name swank-buffer-name dir hostname))
   (message "Starting swank server..."))
@@ -167,12 +160,13 @@ The arguments are dir, hostname, and port.  The return value should be an `alist
 ;;;###autoload
 (defun clojure-enable-slime-on-existing-buffers ()
   (interactive)
-  (add-hook 'clojure-mode-hook 'clojure-enable-slime)
-  (save-window-excursion
-    (dolist (buffer (buffer-list))
-      (with-current-buffer buffer
-        (when (eq major-mode 'clojure-mode)
-          (clojure-enable-slime))))))
+  (when (clojure-slime-connectionp)
+    (add-hook 'clojure-mode-hook 'clojure-enable-slime)
+    (save-window-excursion
+      (dolist (buffer (buffer-list))
+        (with-current-buffer buffer
+          (when (eq major-mode 'clojure-mode)
+            (clojure-enable-slime)))))))
 
 ;;; slime filename translation for tramp
 (defun clojure-slime-tramp-local-filename (f)
@@ -194,14 +188,18 @@ The arguments are dir, hostname, and port.  The return value should be an `alist
     f))
 
 (defun clojure-slime-remote-file-name-hook ()
-  (setq slime-from-lisp-filename-function
-        'clojure-slime-tramp-remote-filename)
-  (setq slime-to-lisp-filename-function
-        'clojure-slime-tramp-local-filename))
+  (when (clojure-slime-connectionp)
+    (setq slime-from-lisp-filename-function 'clojure-slime-tramp-remote-filename
+          slime-to-lisp-filename-function 'clojure-slime-tramp-local-filename)))
+
+(defun clojure-slime-connectionp ()
+  (equal "Clojure" (slime-lisp-implementation-type)))
 
 (add-hook 'slime-connected-hook 'clojure-slime-remote-file-name-hook)
 (add-hook 'slime-connected-hook 'clojure-enable-slime-on-existing-buffers)
-(add-hook 'slime-indentation-update-hooks 'put-clojure-indent)
-(add-hook 'slime-indentation-update-hooks 'put-clojure-indent)
+(add-hook 'slime-indentation-update-hooks
+          (lambda (&rest args)
+            (when (clojure-slime-connectionp)
+              (apply 'put-clojure-indent args))))
 
 (provide 'clojure-mode-slime)

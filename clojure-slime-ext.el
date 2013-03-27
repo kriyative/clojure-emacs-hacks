@@ -26,10 +26,11 @@
   (replace-regexp-in-string "\\\\\\(.\\)" "\\1" (prin1-to-string expr)))
 
 (defun cljx/inject-slime-commands ()
-  (when (equal "Clojure" (slime-lisp-implementation-type))
+  (when (clojure-slime-connectionp)
     (slime-eval-async `(interactive-eval
 			,(cljx/form->string *cljx-slime-commands*))
-      (lambda (&rest args) (message "cljx-slime-commands injected ok.")))))
+      (lambda (&rest args)
+        (message "cljx-slime-commands injected ok.")))))
 
 (add-hook 'slime-connected-hook 'cljx/inject-slime-commands)
 
