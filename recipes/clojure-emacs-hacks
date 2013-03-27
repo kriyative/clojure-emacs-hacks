@@ -1,0 +1,11 @@
+(clojure-emacs-hacks
+ :version "1.0.0"
+ :doc "Clojure mode extensions"
+ :files ("browse-w3m.el"
+         "clojure-mode-ext.el"
+         "clojure-mode-slime.el"
+         "clojure-slime-ext.el"
+         "clojure-test-mode-slime.el"
+         "clojuredocs.el")
+ :requires ((clojure-mode "2.0.0")
+            (clojure-test-mode "2.0.0")))
