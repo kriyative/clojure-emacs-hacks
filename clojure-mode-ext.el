@@ -119,13 +119,6 @@ anything (for example, a definition in a Java class)."
 
 (add-hook 'clojure-mode-hook 'cljx/clojure-mode-hook)
 
-(defun cljx/clojurescript-mode-hook ()
-  ;; disable slime as clojurescript uses inferior-lisp-mode
-  (slime-mode -1))
-
-(require 'clojurescript-mode)
-(add-hook 'clojurescript-mode-hook 'cljx/clojurescript-mode-hook)
-
 ;;; :::::::::::::::: Compilation mode setup
 (require 'compile)
 
