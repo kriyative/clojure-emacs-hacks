@@ -1,5 +1,5 @@
 (clojure-emacs-hacks
- :version "1.1.1"
+ :version "1.1.2"
  :doc "Clojure mode extensions"
  :files ("browse-w3m.el"
          "clojure-mode-ext.el"
