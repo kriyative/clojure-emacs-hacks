@@ -32,8 +32,12 @@
 
 (defun clojurescript-eval-last-expression ()
   (interactive)
-  (let ((expr (slime-last-expression)))
-    (comint-send-string (inferior-lisp-proc) (concat expr "\n"))))
+  (let ((expr (slime-last-expression))
+        (ns (clojure-find-ns)))
+    (comint-send-string (inferior-lisp-proc)
+                        (concat
+                         (format "(in-ns '%s)\n" (or ns "user"))
+                         expr "\n"))))
 
 (defun clojurescript-compile-and-load-file ()
   (interactive)
