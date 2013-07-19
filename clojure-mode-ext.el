@@ -109,8 +109,7 @@ anything (for example, a definition in a Java class)."
 (defun cljx/clojure-mode-hook ()
   ;; configure special indentation rules for some keywords
   (cljx/customize-indent-settings 'clojure-indent-function
-                                  '((are . let)
-                                    (-> . 1)))
+                                  '((are . let)))
   (setq clojure-mode-use-backtracking-indent t
         clojure-mode-font-lock-comment-sexp t)
   (slime-mode 1)
